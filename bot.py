@@ -1,21 +1,21 @@
 import telebot
 import json
 from config import TOKEN
-from handlers import commands, bonus, top, profile, fishing, shop, sell, craft
+from handlers import fishing, shop, sell, craft, bonus, top, profile, commands
 from telebot import types
 
 bot = telebot.TeleBot(TOKEN)
 
-# --- Загрузка базы ---
+# --- база данных ---
 try:
-    with open("database/db.json", "r") as f:
+    with open("database/db.json","r") as f:
         db = json.load(f)
 except:
-    db = {"users": {}, "chats": {}}
+    db = {"users":{},"chats":{}}
 
 def save_db():
-    with open("database/db.json", "w") as f:
-        json.dump(db, f, indent=4)
+    with open("database/db.json","w") as f:
+        json.dump(db,f,indent=4)
 
 # --- Главное меню клавиатуры ---
 def main_menu(user_id):
@@ -43,7 +43,7 @@ help_message = """Привет! 👋
 🎒 Инвентарь — /inventory или Инвентарь  
 🍳 Готовить — /craft или Готовить
 
-Бот сделан от @Nextriz для @Lisichca1
+БОТ СДЕЛАН НА ЗАКАЗ ДЛЯ @Lisichca1
 """
 
 # --- Обработчик клавиатуры ---
@@ -84,16 +84,14 @@ def new_chat(message):
         if user.id == bot.get_me().id:
             bot.send_message(message.chat.id, help_message, reply_markup=main_menu(str(message.chat.id)))
 
-# --- Регистрация модулей ---
-commands.register(bot, db, save_db)
-bonus.register(bot, db, save_db)
-top.register(bot, db, save_db)
-profile.register(bot, db, save_db)
+# --- регистрация всех модулей ---
 fishing.register(bot, db, save_db)
 shop.register(bot, db, save_db)
 sell.register(bot, db, save_db)
 craft.register(bot, db, save_db)
+bonus.register(bot, db, save_db)
+top.register(bot, db, save_db)
+profile.register(bot, db, save_db)
+commands.register(bot, db, save_db)
 
-# --- Запуск ---
-print("Бот запущен...")
 bot.infinity_polling()
