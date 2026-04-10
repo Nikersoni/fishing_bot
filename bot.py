@@ -2,10 +2,10 @@ import telebot
 from telebot import types
 import sqlite3
 import random
-import os
+import time
 
-TOKEN = ("8660641414:AAEgmiRuWFa0ftw4_Is7pcy30E9LjwZxY9c")  # для хостинга
-CHANNEL = "@LeBomjara"   # замени на свой канал
+TOKEN = "8660641414:AAEgmiRuWFa0ftw4_Is7pcy30E9LjwZxY9c"  # ⚠️ вставь новый токен!
+CHANNEL = "@LeBomjara"
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
     balance REAL DEFAULT 0,
     referrer_id INTEGER,
     ref_count INTEGER DEFAULT 0,
-    is_activated INTEGER DEFAULT 0
+    is_activated INTEGER DEFAULT 0,
+    last_bonus INTEGER DEFAULT 0
 )
 ''')
 conn.commit()
@@ -39,18 +40,16 @@ def main_keyboard():
 def subscribe_keyboard():
     markup = types.InlineKeyboardMarkup()
 
-    sub_btn = types.InlineKeyboardButton(
+    markup.add(types.InlineKeyboardButton(
         "📢 Подписаться",
-        url=f"https://t.me/{CHANNEL.replace('@','')}"
-    )
+        url="https://t.me/LeBomjara"
+    ))
 
-    check_btn = types.InlineKeyboardButton(
+    markup.add(types.InlineKeyboardButton(
         "✅ Проверить",
         callback_data="check_sub"
-    )
+    ))
 
-    markup.add(sub_btn)
-    markup.add(check_btn)
     return markup
 
 # --- ФУНКЦИИ ---
@@ -103,9 +102,31 @@ def activate_user(user_id):
 
     conn.commit()
 
+def give_daily_bonus(user_id):
+    cursor.execute("SELECT last_bonus FROM users WHERE user_id = ?", (user_id,))
+    result = cursor.fetchone()
+
+    if not result:
+        return False, 0
+
+    last_bonus = result[0]
+    now = int(time.time())
+
+    if now - last_bonus < 86400:
+        remaining = 86400 - (now - last_bonus)
+        return False, remaining
+
+    cursor.execute(
+        "UPDATE users SET balance = balance + 5, last_bonus = ? WHERE user_id = ?",
+        (now, user_id)
+    )
+    conn.commit()
+
+    return True, 0
+
 def get_top_users():
     cursor.execute(
-        "SELECT user_id, ref_count FROM users ORDER BY ref_count DESC LIMIT 10"
+        "SELECT user_id, ref_count FROM users WHERE ref_count > 0 ORDER BY ref_count DESC LIMIT 10"
     )
     return cursor.fetchall()
 
@@ -132,8 +153,17 @@ def start(message):
 
     bot.send_message(
         message.chat.id,
-        "💸 Зарабатывай в Telegram!\n\n"
-        "+2.5$ за каждого друга 👇",
+        "🚀 Запуск истории: Le Бомжара\n\n"
+        "Ты начинаешь с нуля:\n"
+        "без денег, без связей, без шансов.\n\n"
+        "🪙 Зарабатывай первые деньги\n"
+        "📈 Ищи возможности\n"
+        "🏢 Выходи на стабильный доход\n"
+        "🏗️ Строй свой бизнес\n\n"
+        "Каждое решение влияет на твой путь.\n\n"
+        "🐲 Сможешь ли ты дойти до финансовой вершины?\n\n"
+        "⏳ Скоро релиз.\n"
+        "Сейчас идёт тест — будь одним из первых 👇",
         reply_markup=main_keyboard()
     )
 
@@ -173,6 +203,18 @@ def bonus(message):
             reply_markup=subscribe_keyboard()
         )
         return
+
+    success, remaining = give_daily_bonus(user_id)
+
+    if success:
+        bot.send_message(message.chat.id, "💰 Ты получил +5₽ ежедневный бонус!")
+    else:
+        hours = remaining // 3600
+        minutes = (remaining % 3600) // 60
+        bot.send_message(
+            message.chat.id,
+            f"⏳ Бонус уже получен\nПопробуй через {hours}ч {minutes}м"
+        )
 
     bot.send_message(message.chat.id, generate_captcha(user_id))
 
