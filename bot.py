@@ -4,8 +4,8 @@ import sqlite3
 import random
 import os
 
-TOKEN = os.getenv("TOKEN")  # для хостинга
-CHANNEL = "@your_channel"   # замени на свой канал
+TOKEN = os.getenv("8660641414:AAEgmiRuWFa0ftw4_Is7pcy30E9LjwZxY9c")  # для хостинга
+CHANNEL = "@LeBomjara"   # замени на свой канал
 
 bot = telebot.TeleBot(TOKEN)
 
